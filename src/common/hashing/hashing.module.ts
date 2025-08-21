@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { HashingService } from './hashing.service';
 import { BcryptHashingService } from './implementations/bcrypt-hashing.service';
+import { HashingService } from './hashing.abstract';
 
 @Module({
   providers: [

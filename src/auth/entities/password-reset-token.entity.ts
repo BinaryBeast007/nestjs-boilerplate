@@ -3,13 +3,13 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
 } from 'typeorm';
 
 @Entity()
-export class RefreshToken {
+export class PasswordResetToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -27,7 +27,10 @@ export class RefreshToken {
   })
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.passwordResetTokens, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn({ name: 'userId' })
   user: User;
 

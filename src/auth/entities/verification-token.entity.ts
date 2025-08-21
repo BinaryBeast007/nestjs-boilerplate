@@ -7,21 +7,14 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { TokenType } from '../enums/token-type.enum';
 
-@Entity('tokens')
-export class Token {
+@Entity()
+export class VerificationToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ unique: true })
   token: string;
-
-  @Column({
-    type: 'enum',
-    enum: TokenType,
-  })
-  type: TokenType;
 
   @Column({
     type: 'timestamp with time zone',
@@ -34,7 +27,7 @@ export class Token {
   })
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.tokens, {
+  @ManyToOne(() => User, (user) => user.verificationTokens, {
     onDelete: 'CASCADE',
     nullable: false,
   })

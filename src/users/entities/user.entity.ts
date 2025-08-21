@@ -8,8 +8,9 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { Token } from 'src/auth/entities/token.entity';
 import { RefreshToken } from 'src/auth/entities/refresh-token.entity';
+import { PasswordResetToken } from 'src/auth/entities/password-reset-token.entity';
+import { VerificationToken } from 'src/auth/entities/verification-token.entity';
 
 @Entity('users')
 export class User {
@@ -47,8 +48,17 @@ export class User {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @OneToMany(() => Token, (token) => token.user)
-  tokens: Token[];
+  @OneToMany(
+    () => PasswordResetToken,
+    (passwordResetToken) => passwordResetToken.user,
+  )
+  passwordResetTokens: PasswordResetToken[];
+
+  @OneToMany(
+    () => VerificationToken,
+    (verificationToken) => verificationToken.user,
+  )
+  verificationTokens: VerificationToken[];
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens: RefreshToken[];

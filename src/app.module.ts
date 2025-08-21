@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HashingModule } from './common/hashing/hashing.module';
+import { MailerModule } from './mailer/mailer.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -29,6 +30,7 @@ import configuration from './config/configuration';
     UsersModule,
     AuthModule,
     HashingModule,
+    MailerModule,
   ],
   controllers: [],
   providers: [],
