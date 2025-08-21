@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { RefreshToken } from 'src/auth/entities/refresh-token.entity';
 import { User } from 'src/users/entities/user.entity';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class RefreshTokenService {
   constructor(
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
+    private jwtService: JwtService,
   ) {}
 
   async createRefreshToken(
@@ -30,6 +32,31 @@ export class RefreshTokenService {
     await this.refreshTokenRepository.save(refreshToken);
 
     return tokenStr;
+  }
+
+  async refresh(
+    oldRefreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const refreshTokenEntity = await this.refreshTokenRepository.findOne({
+      where: { token: oldRefreshToken, expiresAt: MoreThan(new Date()) },
+      relations: ['user'],
+    });
+
+    if (!refreshTokenEntity) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const user = refreshTokenEntity.user;
+
+    await this.refreshTokenRepository.remove(refreshTokenEntity);
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    });
+    const newRefreshToken = await this.createRefreshToken(user);
+
+    return { accessToken, refreshToken: newRefreshToken };
   }
 
   async findRefreshToken(tokenStr: string): Promise<RefreshToken | null> {

@@ -1,10 +1,18 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from 'src/users/services/users.service';
 import { HashingService } from 'src/common/hashing/hashing.abstract';
 import { RegisterDto } from '../dtos/register.dto';
 import { RegisterResponseDto } from '../dtos/register-response.dto';
 import { VerificationTokenService } from './verification-token.service';
 import { MailerService } from 'src/mailer/mailer.service';
+import { LoginDto } from '../dtos/login.dto';
+import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenService } from './refresh-token.service';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +20,9 @@ export class AuthService {
     private usersService: UsersService,
     private readonly hashingService: HashingService,
     private readonly verificationTokenService: VerificationTokenService,
+    private readonly refreshTokenService: RefreshTokenService,
     private mailerService: MailerService,
+    private jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
@@ -44,5 +54,29 @@ export class AuthService {
       email: user.email,
       emailVerified: user.emailVerified,
     };
+  }
+
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const user = await this.usersService.findByEmail(loginDto.email);
+    if (
+      !user ||
+      !(await this.hashingService.compare(loginDto.password, user.password))
+    ) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.emailVerified) {
+      throw new ForbiddenException('Email not verified');
+    }
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    });
+    const refreshToken =
+      await this.refreshTokenService.createRefreshToken(user);
+
+    return { accessToken, refreshToken: refreshToken };
   }
 }
