@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { User } from 'src/users/entities/user.entity';
 import { VerificationToken } from '../entities/verification-token.entity';
+import { UsersService } from 'src/users/services/users.service';
+import { MailerService } from 'src/mailer/mailer.service';
 
 @Injectable()
 export class VerificationTokenService {
   constructor(
     @InjectRepository(VerificationToken)
     private readonly tokenRepository: Repository<VerificationToken>,
+    private usersService: UsersService,
+    private mailerService: MailerService,
   ) {}
 
   async createVerificationToken(
@@ -45,6 +49,17 @@ export class VerificationTokenService {
       },
       relations: ['user'],
     });
+  }
+
+  async resendVerification(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    if (user && !user.emailVerified) {
+      const verificationToken = await this.createVerificationToken(user);
+      await this.mailerService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+      );
+    }
   }
 
   isTokenExpired(token: VerificationToken): boolean {

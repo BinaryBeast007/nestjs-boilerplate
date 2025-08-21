@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -78,5 +79,21 @@ export class AuthService {
       await this.refreshTokenService.createRefreshToken(user);
 
     return { accessToken, refreshToken: refreshToken };
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    const verificationToken =
+      await this.verificationTokenService.findVerificationToken(token);
+
+    const user = verificationToken?.user;
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    user.emailVerified = true;
+    await this.verificationTokenService.invalidateVerificationToken(
+      verificationToken.token,
+    );
+    await this.usersService.updateEmailVerified(user);
   }
 }
