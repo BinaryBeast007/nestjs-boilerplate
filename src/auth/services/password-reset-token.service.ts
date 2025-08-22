@@ -45,6 +45,15 @@ export class PasswordResetTokenService {
     });
   }
 
+  async findUserIdByResetToken(tokenStr: string): Promise<string | null> {
+    const token = await this.tokenRepository.findOne({
+      where: { token: tokenStr },
+      select: ['userId'],
+    });
+
+    return token?.userId ?? null;
+  }
+
   isTokenExpired(token: PasswordResetToken): boolean {
     return token.expiresAt < new Date();
   }

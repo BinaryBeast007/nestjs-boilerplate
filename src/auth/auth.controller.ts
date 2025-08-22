@@ -6,6 +6,8 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { RegisterDto } from './dtos/register.dto';
 import { AuthService } from './services/auth.service';
@@ -15,6 +17,10 @@ import { RefreshTokenService } from './services/refresh-token.service';
 import { VerificationTokenService } from './services/verification-token.service';
 import { VerificationTokenDto } from './dtos/verification-token.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
+import { JwtAuthGuard } from './guards/jwt.guard';
+import { ForgotPasswordDto } from './dtos/forgot-password.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -68,5 +74,33 @@ export class AuthController {
       message:
         'If an account exists with this email and is not verified, a verification email has been sent.',
     };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Req() req: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword(req.user.id, changePasswordDto);
+    return { message: 'Password changed successfully' };
+  }
+
+  @Post('password/forgot')
+  @HttpCode(HttpStatus.OK)
+  async forgot(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(forgotPasswordDto.email);
+    return {
+      message:
+        'If an account exists with this email, a password reset email has been sent.',
+    };
+  }
+
+  @Post('password/reset')
+  @HttpCode(HttpStatus.OK)
+  async reset(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(resetPasswordDto);
+    return { message: 'Password reset successfully' };
   }
 }

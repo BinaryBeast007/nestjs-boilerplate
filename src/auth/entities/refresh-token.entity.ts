@@ -31,6 +31,6 @@ export class RefreshToken {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
-  userId: number;
+  @Column({ type: 'uuid' })
+  userId: string;
 }
