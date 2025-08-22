@@ -34,18 +34,23 @@ export class User {
   emailVerified: boolean;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
+  @Exclude()
   provider: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
+  @Exclude()
   providerId: string | null;
 
   @CreateDateColumn()
+  @Exclude()
   createdAt: Date;
 
   @UpdateDateColumn()
+  @Exclude()
   updatedAt: Date;
 
   @DeleteDateColumn()
+  @Exclude()
   deletedAt: Date;
 
   @OneToMany(
