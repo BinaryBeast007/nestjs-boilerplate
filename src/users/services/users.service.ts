@@ -10,6 +10,7 @@ import { User } from '../entities/user.entity';
 import { UpdateUserDto } from '../dtos/update-user.dto';
 import { HashingService } from 'src/common/hashing/hashing.abstract';
 import { PaginationDto } from '../dtos/pagination.dto';
+import { UpdateEmailVerifiedDto } from '../dtos/update-email-verified.dto';
 
 @Injectable()
 export class UsersService {
@@ -74,8 +75,12 @@ export class UsersService {
     await this.usersRepository.softDelete(id);
   }
 
-  async updateEmailVerified(user: User): Promise<User | null> {
-    return await this.usersRepository.save(user);
+  async updateEmailVerified(
+    updateEmailVerifiedDto: UpdateEmailVerifiedDto,
+  ): Promise<void> {
+    await this.usersRepository.update(updateEmailVerifiedDto.userId, {
+      emailVerified: updateEmailVerifiedDto.emailVerified,
+    });
   }
 
   async findByProviderId(

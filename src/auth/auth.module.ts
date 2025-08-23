@@ -4,23 +4,20 @@ import { AuthService } from './services/auth.service';
 import { HashingModule } from 'src/common/hashing/hashing.module';
 import { UsersModule } from 'src/users/users.module';
 import { MailerModule } from 'src/mailer/mailer.module';
-import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
-import { VerificationToken } from './entities/verification-token.entity';
-import { PasswordResetTokenService } from './services/password-reset-token.service';
 import { RefreshTokenService } from './services/refresh-token.service';
-import { VerificationTokenService } from './services/verification-token.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt.guard';
+import { UserToken } from './entities/user-token.entity';
+import { UserTokenService } from './services/user-token.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PasswordResetToken]),
+    TypeOrmModule.forFeature([UserToken]),
     TypeOrmModule.forFeature([RefreshToken]),
-    TypeOrmModule.forFeature([VerificationToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -39,9 +36,8 @@ import { JwtAuthGuard } from './guards/jwt.guard';
     AuthService,
     JwtStrategy,
     JwtAuthGuard,
-    PasswordResetTokenService,
     RefreshTokenService,
-    VerificationTokenService,
+    UserTokenService,
   ],
 })
 export class AuthModule {}

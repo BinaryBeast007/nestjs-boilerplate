@@ -10,23 +10,22 @@ import { UsersService } from 'src/users/services/users.service';
 import { HashingService } from 'src/common/hashing/hashing.abstract';
 import { RegisterDto } from '../dtos/register.dto';
 import { RegisterResponseDto } from '../dtos/register-response.dto';
-import { VerificationTokenService } from './verification-token.service';
 import { MailerService } from 'src/mailer/mailer.service';
 import { LoginDto } from '../dtos/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshTokenService } from './refresh-token.service';
 import { ChangePasswordDto } from '../dtos/change-password.dto';
-import { PasswordResetTokenService } from './password-reset-token.service';
 import { ResetPasswordDto } from '../dtos/reset-password.dto';
+import { TokenType } from '../enums/token-type.enum';
+import { UserTokenService } from './user-token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private readonly hashingService: HashingService,
-    private readonly verificationTokenService: VerificationTokenService,
     private readonly refreshTokenService: RefreshTokenService,
-    private readonly passwordResetTokenService: PasswordResetTokenService,
+    private readonly userTokenService: UserTokenService,
     private mailerService: MailerService,
     private jwtService: JwtService,
   ) {}
@@ -47,8 +46,10 @@ export class AuthService {
       emailVerified: false,
     });
 
-    const verificationToken =
-      await this.verificationTokenService.createVerificationToken(user);
+    const verificationToken = await this.userTokenService.createToken(
+      user,
+      TokenType.EMAIL_VERIFICATION,
+    );
 
     await this.mailerService.sendVerificationEmail(
       user.email,
@@ -87,19 +88,24 @@ export class AuthService {
   }
 
   async verifyEmail(token: string): Promise<void> {
-    const verificationToken =
-      await this.verificationTokenService.findVerificationToken(token);
+    const verificationToken = await this.userTokenService.findToken(
+      token,
+      TokenType.EMAIL_VERIFICATION,
+    );
 
-    const user = verificationToken?.user;
-    if (!user) {
+    const userId = verificationToken?.userId;
+    if (!userId) {
       throw new BadRequestException('Invalid or expired verification token');
     }
 
-    user.emailVerified = true;
-    await this.verificationTokenService.invalidateVerificationToken(
+    await this.userTokenService.invalidateToken(
       verificationToken.token,
+      TokenType.EMAIL_VERIFICATION,
     );
-    await this.usersService.updateEmailVerified(user);
+    await this.usersService.updateEmailVerified({
+      userId: userId,
+      emailVerified: true,
+    });
   }
 
   async changePassword(
@@ -123,15 +129,17 @@ export class AuthService {
   async forgotPassword(email: string): Promise<void> {
     const user = await this.usersService.findByEmail(email);
     if (user) {
-      const resetToken =
-        await this.passwordResetTokenService.createResetToken(user);
-      await this.mailerService.sendPasswordResetEmail(user.email, resetToken);
+      await this.userTokenService.requestToken(
+        user.email,
+        TokenType.PASSWORD_RESET,
+      );
     }
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
-    const userId = await this.passwordResetTokenService.findUserIdByResetToken(
+    const userId = await this.userTokenService.getUserIdByToken(
       resetPasswordDto.token,
+      TokenType.PASSWORD_RESET,
     );
 
     if (!userId) {
@@ -142,8 +150,9 @@ export class AuthService {
       password: resetPasswordDto.newPassword,
     });
 
-    await this.passwordResetTokenService.invalidateResetToken(
+    await this.userTokenService.invalidateToken(
       resetPasswordDto.token,
+      TokenType.PASSWORD_RESET,
     );
   }
 }

@@ -14,20 +14,21 @@ import { AuthService } from './services/auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { RefreshDto } from './dtos/refresh.dto';
 import { RefreshTokenService } from './services/refresh-token.service';
-import { VerificationTokenService } from './services/verification-token.service';
 import { VerificationTokenDto } from './dtos/verification-token.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { UserTokenService } from './services/user-token.service';
+import { TokenType } from './enums/token-type.enum';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly refreshTokenService: RefreshTokenService,
-    private readonly verificationTokenService: VerificationTokenService,
+    private readonly userTokenService: UserTokenService,
   ) {}
 
   @Post('register')
@@ -67,8 +68,9 @@ export class AuthController {
   @Post('verify/resend')
   @HttpCode(HttpStatus.OK)
   async resend(@Body() resendVerificationDto: ResendVerificationDto) {
-    await this.verificationTokenService.resendVerification(
+    await this.userTokenService.requestToken(
       resendVerificationDto.email,
+      TokenType.EMAIL_VERIFICATION,
     );
     return {
       message:

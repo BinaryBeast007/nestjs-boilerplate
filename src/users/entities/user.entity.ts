@@ -9,8 +9,7 @@ import {
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { RefreshToken } from 'src/auth/entities/refresh-token.entity';
-import { PasswordResetToken } from 'src/auth/entities/password-reset-token.entity';
-import { VerificationToken } from 'src/auth/entities/verification-token.entity';
+import { UserToken } from 'src/auth/entities/user-token.entity';
 
 @Entity('users')
 export class User {
@@ -53,17 +52,8 @@ export class User {
   @Exclude()
   deletedAt: Date;
 
-  @OneToMany(
-    () => PasswordResetToken,
-    (passwordResetToken) => passwordResetToken.user,
-  )
-  passwordResetTokens: PasswordResetToken[];
-
-  @OneToMany(
-    () => VerificationToken,
-    (verificationToken) => verificationToken.user,
-  )
-  verificationTokens: VerificationToken[];
+  @OneToMany(() => UserToken, (userToken) => userToken.user)
+  userTokens: UserToken[];
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens: RefreshToken[];

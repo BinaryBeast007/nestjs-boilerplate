@@ -7,14 +7,21 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { TokenType } from '../enums/token-type.enum';
 
 @Entity()
-export class PasswordResetToken {
+export class UserToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ unique: true })
   token: string;
+
+  @Column({
+    type: 'enum',
+    enum: TokenType,
+  })
+  type: TokenType;
 
   @Column({
     type: 'timestamp with time zone',
@@ -27,7 +34,7 @@ export class PasswordResetToken {
   })
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.passwordResetTokens, {
+  @ManyToOne(() => User, (user) => user.userTokens, {
     onDelete: 'CASCADE',
     nullable: false,
   })
