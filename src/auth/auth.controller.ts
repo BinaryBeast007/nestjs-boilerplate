@@ -22,6 +22,7 @@ import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { UserTokenService } from './services/user-token.service';
 import { TokenType } from './enums/token-type.enum';
+import { RefreshGuard } from './guards/refresh.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -44,12 +45,14 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() refreshDto: RefreshDto) {
     return this.refreshTokenService.refresh(refreshDto.refreshToken);
   }
 
   @Post('logout')
+  @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@Body() refreshDto: RefreshDto) {
     await this.refreshTokenService.invalidateRefreshToken(
@@ -104,5 +107,12 @@ export class AuthController {
   async reset(@Body() resetPasswordDto: ResetPasswordDto) {
     await this.authService.resetPassword(resetPasswordDto);
     return { message: 'Password reset successfully' };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async me(@Req() req: any) {
+    return this.authService.getProfile(req.user.id);
   }
 }

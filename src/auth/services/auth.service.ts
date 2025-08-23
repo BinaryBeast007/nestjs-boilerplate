@@ -155,4 +155,18 @@ export class AuthService {
       TokenType.PASSWORD_RESET,
     );
   }
+
+  async getProfile(userId: string): Promise<any> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailVerified: user.emailVerified,
+    };
+  }
 }
