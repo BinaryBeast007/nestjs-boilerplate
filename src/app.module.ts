@@ -6,7 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HashingModule } from './common/hashing/hashing.module';
 import { MailerModule } from './mailer/mailer.module';
 import configuration from './config/configuration';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -14,6 +15,12 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
       isGlobal: true,
       load: [configuration],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -38,6 +45,10 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
