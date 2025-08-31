@@ -1,5 +1,4 @@
 import {
-  HttpStatus,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -21,8 +20,12 @@ export class UsersService {
   ) {}
 
   async create(userData: Partial<User>): Promise<User> {
-    const user = this.usersRepository.create(userData);
-    return await this.usersRepository.save(user);
+    try {
+      const user = this.usersRepository.create(userData);
+      return await this.usersRepository.save(user);
+    } catch (error) {
+      throw new UnprocessableEntityException('Failed to create user');
+    }
   }
 
   async findById(id: string): Promise<User | null> {
@@ -40,15 +43,19 @@ export class UsersService {
     const query = this.usersRepository.createQueryBuilder('user');
     if (search) {
       query.where(
-        'user.firstName LIKE :search OR user.lastName LIKE :search OR user.email LIKE :search',
+        'user.firstName ILIKE :search OR user.lastName ILIKE :search OR user.email ILIKE :search', // Changed to ILIKE for case-insensitive search
         { search: `%${search}%` },
       );
     }
-    const [users, total] = await query
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-    return { users, total };
+    try {
+      const [users, total] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+      return { users, total };
+    } catch (error) {
+      throw new UnprocessableEntityException('Failed to fetch users');
+    }
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
@@ -63,8 +70,12 @@ export class UsersService {
       );
     }
 
-    Object.assign(user, updateUserDto);
-    return await this.usersRepository.save(user);
+    try {
+      Object.assign(user, updateUserDto);
+      return await this.usersRepository.save(user);
+    } catch (error) {
+      throw new UnprocessableEntityException('Failed to update user');
+    }
   }
 
   async remove(id: string): Promise<void> {
@@ -72,15 +83,34 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    await this.usersRepository.softDelete(id);
+    try {
+      await this.usersRepository.softDelete(id);
+    } catch (error) {
+      throw new UnprocessableEntityException('Failed to delete user');
+    }
   }
 
   async updateEmailVerified(
     updateEmailVerifiedDto: UpdateEmailVerifiedDto,
   ): Promise<void> {
-    await this.usersRepository.update(updateEmailVerifiedDto.userId, {
-      emailVerified: updateEmailVerifiedDto.emailVerified,
-    });
+    try {
+      const result = await this.usersRepository.update(
+        updateEmailVerifiedDto.userId,
+        { emailVerified: updateEmailVerifiedDto.emailVerified },
+      );
+      if (result.affected === 0) {
+        throw new NotFoundException(
+          `User with id ${updateEmailVerifiedDto.userId} not found`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new UnprocessableEntityException(
+        'Failed to update email verification status',
+      );
+    }
   }
 
   async findByProviderId(
