@@ -44,7 +44,9 @@ export class UsersController {
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return plainToInstance(UserResponseDto, user);
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Get()
